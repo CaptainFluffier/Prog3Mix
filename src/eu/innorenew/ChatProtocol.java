@@ -1,6 +1,7 @@
 package eu.innorenew;
 
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -10,7 +11,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.sql.Connection;
 import java.sql.SQLOutput;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -19,21 +23,23 @@ public class ChatProtocol {
 
     public static synchronized void digest(Message message, Node node){
      //  if(!message_log.containsKey(message.getSignature())){
-            Node origin = Main.peerSet.get(message.getPub_key());
+           // Node origin = Main.peerSet.get(message.getPub_key());
             Main.prev = message.getPub_key();
-        System.out.println("Prev je: " + Main.prev);
+       // System.out.println("Prev je: " + Main.prev);
         try {
             System.out.println("Digesting msg: ");
             String key = CryptoUtil.decryptText(message.getSecret(),CryptoUtil.pvtRSA);
             String[] arrOfStr = CryptoUtil.decryptAES(message.getBody(),key).split("ČČČ", 0);
             //System.out.println(arrOfStr[0] + " " + arrOfStr[1] + " " + arrOfStr[2] + " " + key);
             if(arrOfStr[arrOfStr.length-1].equals("zadnji")){
-                if(Main.prev==null) return;
-                System.out.println("Enoded with" + arrOfStr[arrOfStr.length-2]);
+                if(Main.prev==null) {
+                    System.out.println("Error decrypting and sending back");return;}
+                //System.out.println("Encoded with" + arrOfStr[arrOfStr.length-2]);
                 Message m = new Message(System.currentTimeMillis(),
                         "return",
                         "text",
                         CryptoUtil.encryptAES(getHtml(arrOfStr[0]),arrOfStr[arrOfStr.length-2]));
+                        //CryptoUtil.encryptAES((arrOfStr[0]),arrOfStr[arrOfStr.length-2]));
                 ChatProtocol.broadcast(CryptoUtil.signMessage(m),Main.peerSet.get(Main.prev));
                 Main.prev = null;
             }else {
@@ -62,9 +68,11 @@ public class ChatProtocol {
 
 
     public static synchronized void digestReturn(Message message){
-        System.out.println("Returning: ");
-        if(Main.prev==null)
+        if(Main.prev==null){
             System.out.println(CryptoUtil.decryptAES(message.getBody(),Main.keys[Main.keys.length-1]));
+            System.out.println(System.currentTimeMillis() - Main.starttime);
+        }
+
         else{
             message.setPub_key(Main.prev);
             ChatProtocol.broadcast(CryptoUtil.signMessage(message),Main.peerSet.get(Main.prev));
@@ -84,12 +92,14 @@ public class ChatProtocol {
     }
 
     public static String getHtml(String url) { // String url
+
         try {
-            String html = Jsoup.connect(url).get().html();
+            String html = Jsoup.connect(url).maxBodySize(0).timeout(0).get().html();
             return html;
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error reading html";
+            System.out.println("Error reading html");
+            return url;
         }
     }
 
@@ -110,8 +120,28 @@ public class ChatProtocol {
              //   }
             }
        // }
-        for(int j =0; j<path.length;j++){
+    /*    for(int j =0; j<path.length;j++){
             System.out.println(path[j].getPort());
-        }
+        }*/
     return path;}
+
+  /*  public static String test(){
+        byte[] bytes = new byte[1024*1024];
+        try {
+            SecureRandom.getInstanceStrong().nextBytes(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return Base64.getEncoder().encodeToString(bytes);
+    } */
+
+        public static String test(int n){
+        byte[] bytes = new byte[((1024*1024)/2)*n];
+        try {
+            SecureRandom.getInstanceStrong().nextBytes(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return Base64.getEncoder().encodeToString(bytes);
+    }
 }

@@ -70,6 +70,7 @@ public class Node extends Thread {
                 }
             }
         } catch (IOException e) {
+            HandShakeProtocol.sendHandShake(this);
             System.out.println("Socket broke");
         }
     }

@@ -31,6 +31,9 @@ public class InputHandler implements Runnable {
                 }
             }else{ //normal message
                 Node[] path = ChatProtocol.randomPath();
+                //line = ChatProtocol.test(Integer.parseInt(line));
+                // line = ChatProtocol.test();
+                // System.out.println(line.getBytes() + " length: " + line.length());
                 Message message = null;
                 String temp="";
                 String tempkey="";
@@ -56,7 +59,7 @@ public class InputHandler implements Runnable {
                             e.printStackTrace();
                             System.out.println("Error with keys");
                         }
-                    // System.out.println("msg: " + line + " :: " + tmp);
+                   //  System.out.println("msg: " + line + " :: " + tmp);
                      message = new Message(System.currentTimeMillis(),
                             "chat_protocol",
                             "text",
@@ -64,6 +67,7 @@ public class InputHandler implements Runnable {
                             tmp,CryptoUtil.pub);
                 }
              //   System.out.println("Sending to: " + path[0].getPort() + " " + Main.keys[Main.keys.length-1]);
+                Main.starttime = System.currentTimeMillis();
                 ChatProtocol.broadcast(CryptoUtil.signMessage(message),path[0]); // null
             }
         }
